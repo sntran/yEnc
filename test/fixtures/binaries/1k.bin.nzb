@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.0//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.0.dtd">
+<nzb xmlns="http://www.newzbin.com/DTD/2003/nzb">
+<file poster="nserv" date="1617908169" subject="&quot;1k.bin&quot; yEnc (1/16)">
+<groups>
+<group>alt.binaries.test</group>
+</groups>
+<segments>
+<segment bytes="64" number="1">1k.bin?1=0:64</segment>
+<segment bytes="64" number="2">1k.bin?2=64:64</segment>
+<segment bytes="64" number="3">1k.bin?3=128:64</segment>
+<segment bytes="64" number="4">1k.bin?4=192:64</segment>
+<segment bytes="64" number="5">1k.bin?5=256:64</segment>
+<segment bytes="64" number="6">1k.bin?6=320:64</segment>
+<segment bytes="64" number="7">1k.bin?7=384:64</segment>
+<segment bytes="64" number="8">1k.bin?8=448:64</segment>
+<segment bytes="64" number="9">1k.bin?9=512:64</segment>
+<segment bytes="64" number="10">1k.bin?10=576:64</segment>
+<segment bytes="64" number="11">1k.bin?11=640:64</segment>
+<segment bytes="64" number="12">1k.bin?12=704:64</segment>
+<segment bytes="64" number="13">1k.bin?13=768:64</segment>
+<segment bytes="64" number="14">1k.bin?14=832:64</segment>
+<segment bytes="64" number="15">1k.bin?15=896:64</segment>
+<segment bytes="64" number="16">1k.bin?16=960:64</segment>
+</segments>
+</file>
+</nzb>

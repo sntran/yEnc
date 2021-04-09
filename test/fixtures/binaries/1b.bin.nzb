@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nzb PUBLIC "-//newzBin//DTD NZB 1.0//EN" "http://www.newzbin.com/DTD/nzb/nzb-1.0.dtd">
+<nzb xmlns="http://www.newzbin.com/DTD/2003/nzb">
+<file poster="nserv" date="1617914168" subject="&quot;1b.bin&quot; yEnc (1/1)">
+<groups>
+<group>alt.binaries.test</group>
+</groups>
+<segments>
+<segment bytes="64" number="1">1b.bin?1=0:1</segment>
+</segments>
+</file>
+</nzb>

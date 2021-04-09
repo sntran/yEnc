@@ -1,0 +1,4 @@
+=ybegin part=1 line=128 size=1 name=1b.bin
+=ypart begin=1 end=1
+*
+=yend size=1 part=0 pcrc32=d202ef8d
