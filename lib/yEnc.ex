@@ -17,14 +17,12 @@ defmodule YEnc do
   ## Examples
 
       iex> YEnc.encode(<<>>)
-      {:ok, ""}
+      ""
 
       iex> YEnc.decode("")
-      {:ok, ""}
+      ""
 
-      iex> filename = "0b.bin"
-      iex> {:ok, yEncodedPost} = YEnc.post(filename, <<>>)
-      iex> yEncodedPost
+      iex> YEnc.post("0b.bin", <<>>)
       "=ybegin line=128 size=0 name=0b.bin\r\n\r\n=yend size=0 crc32=00000000"
   """
   @moduledoc authors: ["Sơn Trần-Nguyễn"]
@@ -35,12 +33,12 @@ defmodule YEnc do
   ## Examples
 
       iex> YEnc.encode("")
-      {:ok, ""}
+      ""
 
       iex> YEnc.encode(<<>>)
-      {:ok, ""}
+      ""
   """
-  @spec encode(binary()) :: {:ok, binary()}
+  @spec encode(binary()) :: binary()
   defdelegate encode(data), to: :yEnc
 
   @doc ~S"""
@@ -49,9 +47,9 @@ defmodule YEnc do
   ## Examples
 
       iex> YEnc.decode("")
-      {:ok, ""}
+      ""
   """
-  @spec decode(binary()) :: {:ok, binary()}
+  @spec decode(binary()) :: binary()
   defdelegate decode(text), to: :yEnc
 
   @doc ~S"""
@@ -59,11 +57,10 @@ defmodule YEnc do
 
   ## Examples
 
-      iex> {:ok, yEncodedPost} = YEnc.post("0b.bin", "")
-      iex> yEncodedPost
+      iex> YEnc.post("0b.bin", "")
       "=ybegin line=128 size=0 name=0b.bin\r\n\r\n=yend size=0 crc32=00000000"
   """
-  @spec post(Path.t(), binary()) :: {:ok, binary()}
+  @spec post(Path.t(), binary()) :: binary()
   defdelegate post(filename, data), to: :yEnc
 
 end
