@@ -25,7 +25,8 @@
 %% @end
 %%-------------------------------------------------------------------
 -spec encode(binary()) -> binary().
-encode(<<>> = Data) -> Data.
+encode(<<>> = Data) -> Data;
+encode(Data) -> Data.
 
 %%-------------------------------------------------------------------
 %% @doc Performs raw yEnc decoding on data returning the result.
@@ -33,7 +34,8 @@ encode(<<>> = Data) -> Data.
 %% @end
 %%-------------------------------------------------------------------
 -spec decode(binary()) -> binary().
-decode(<<>> = Data) -> Data.
+decode(<<>> = Data) -> Data;
+decode(Data) -> Data.
 
 %%-------------------------------------------------------------------
 %% @doc Returns a single yEnc encoded post, suitable for posting.
