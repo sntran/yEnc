@@ -127,4 +127,18 @@ defmodule YEnc do
   @spec post(Path.t(), binary()) :: binary()
   defdelegate post(filename, data), to: :yEnc
 
+  @doc ~S"""
+  Computes and returns the crc32 (hexadecimal style) checksum for `data`.
+
+  ## Examples
+
+    iex> YEnc.crc32("")
+    "00000000"
+
+    iex> YEnc.crc32("ERLANG")
+    "8a5c101d"
+  """
+  @spec crc32(binary) :: binary()
+  defdelegate crc32(data), to: :yEnc
+
 end

@@ -5,7 +5,8 @@
 -export([
   encode/1,
   decode/1,
-  post/2
+  post/2,
+  crc32/1
 ]).
 
 -export_type([
@@ -121,4 +122,9 @@ post(Filename, Data) ->
 %%-------------------------------------------------------------------
 crc32(<<>>) -> <<"00000000">>;
 crc32(Data) ->
-  integer_to_binary(erlang:crc32(Data), 16).
+  string:lowercase(
+    integer_to_binary(
+      erlang:crc32(Data),
+      16
+    )
+  ).
