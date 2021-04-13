@@ -12,7 +12,7 @@ The package can be installed by adding `yEnc` to your list of dependencies in `m
 ```elixir
 def deps do
   [
-    {:yEnc, "~> 0.0.1"}
+    {:yEnc, "~> 0.1.0"}
   ]
 end
 ```

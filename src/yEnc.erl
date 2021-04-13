@@ -22,20 +22,83 @@
 %%-------------------------------------------------------------------
 %% @doc Performs raw yEnc encoding on data returning the result.
 %%
+%% Encodes each bytes of data to another byte in the extended ASCII
+%% using the formula:
+%%
+%% O = (I+42) % 256
+%%
+%% Under special circumstances, a single escape character (ASCII 3Dh,
+%% "=") is used to indicate that the following output character is
+%% "critical", and requires special handling.
+%%
+%% Critical characters include the following:
+%%
+%% ASCII 00h (NULL)
+%% ASCII 0Ah (LF)
+%% ASCII 0Dh (CR)
+%% ASCII 3Dh (=)
+%%
+%% > ASCII 09h (TAB)  -- removed in version (1.2)
+%%
+%% A typical encoding process might look something like this:
+%%
+%%  1. Fetch a character from the input stream.
+%%  2. Increment the character's ASCII value by 42, modulo 256
+%%  3. If the result is a critical character (as defined in the previous
+%%    section), write the escape character to the output stream and increment
+%%    character's ASCII value by 64, modulo 256.
+%%  4. Output the character to the output stream.
+%%  5. Repeat from start.
+%%
 %% @end
 %%-------------------------------------------------------------------
 -spec encode(binary()) -> binary().
-encode(<<>> = Data) -> Data;
-encode(Data) -> Data.
+encode(Data) -> encode(Data, <<>>).
+
+% @TODO: use compile time function clauses instead of calculation.
+encode(<<>>, Acc) -> Acc;
+% When a character, when encoded, becomes critical character, we adds
+% 64 to it, modulo 256, and prefix it with the escape character.
+encode(<<Byte/integer, Rest/binary>>, Acc) when ?critical(Byte) ->
+  Encoded = (?ENCODE(Byte) + 64) rem 256,
+  encode(Rest, <<Acc/binary, $=, Encoded>>);
+% For other characters, we adds 42, modulo 256.
+encode(<<Byte/integer, Rest/binary>>, Acc) ->
+  Encoded = ?ENCODE(Byte),
+  encode(Rest, <<Acc/binary, Encoded>>).
 
 %%-------------------------------------------------------------------
 %% @doc Performs raw yEnc decoding on data returning the result.
 %%
+%% Decodes each bytes of data to another byte in the extended ASCII
+%% using the following process:
+%%
+%% 1. Fetch a character from the input stream.
+%% 2. If the charater is the escape character, skip it, then substract
+%%    the next character from 64.
+%% 3. If the result is greater than 41, substract 42 from it, else,
+%%    add 214 to it.
+%% 4. Output the character to the output stream.
+%% 5. Repeat from start.
+%%
 %% @end
 %%-------------------------------------------------------------------
 -spec decode(binary()) -> binary().
-decode(<<>> = Data) -> Data;
-decode(Data) -> Data.
+decode(Data) -> decode(Data, <<>>).
+
+decode(<<>>, Acc) -> Acc;
+% Special case when the escaped character is the escape character.
+% 125 - 64 = 61 = $=.
+decode(<<$=, 125, Rest/binary>>, Acc) ->
+  Decoded = ?DECODE(125 - 64),
+  decode(Rest, <<Acc/binary, Decoded>>);
+% Other escaped characters.
+decode(<<$=, Byte, Rest/binary>>, Acc) ->
+  decode(<<(Byte - 64), Rest/binary>>, Acc);
+% Regular character.
+decode(<<Byte/integer, Rest/binary>>, Acc) ->
+  Decoded = ?DECODE(Byte),
+  decode(Rest, <<Acc/binary, Decoded>>).
 
 %%-------------------------------------------------------------------
 %% @doc Returns a single yEnc encoded post, suitable for posting.

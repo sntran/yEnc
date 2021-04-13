@@ -1,7 +1,7 @@
 defmodule YEnc.MixProject do
   use Mix.Project
 
-  @version "0.0.1"
+  @version "0.1.0"
   @repo "https://github.com/sntran/yEnc"
 
   def project do

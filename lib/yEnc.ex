@@ -16,14 +16,66 @@ defmodule YEnc do
 
   ## Examples
 
-      iex> YEnc.encode(<<>>)
-      ""
+      iex> YEnc.encode(<<"ERLANG">>)
+      "o|vkxq"
 
-      iex> YEnc.decode("")
-      ""
+      iex> YEnc.decode("o|vkxq")
+      "ERLANG"
 
       iex> YEnc.post("0b.bin", <<>>)
       "=ybegin line=128 size=0 name=0b.bin\r\n\r\n=yend size=0 crc32=00000000"
+
+  ## Encoding Principle
+
+  The encoding process represents each octet of input data with a single
+  corresponding encoded output character.  The ASCII value of each output
+  character is derived by the following simple formula:
+
+  O = (I+42) % 256
+
+  That is, the output value is equal to the ASCII value of each input
+  character plus 42, all modulo 256.  This reduces overhead by reducing the
+  number of NULL characters (ASCII 00) that would otherwise have had needed
+  to be escaped, since many binaries contain a disproportionately large
+  number of NULLs).
+
+  Under special circumstances, a single escape character (ASCII 3Dh, "=") is
+  used to indicate that the following output character is "critical", and
+  requires special handling.
+
+  Critical characters include the following:
+
+  ASCII 00h (NULL)
+  ASCII 0Ah (LF)
+  ASCII 0Dh (CR)
+  ASCII 3Dh (=)
+  ASCII 09h (TAB)
+
+  These characters should always be escaped.  Additionally, technique used to
+  encode critical characters (described in the next section) provides for any
+  character to be escaped; yDecoder implementations should be capable of
+  decoding any character following an escape sequence.
+
+  The probability of occurance of these 4 characters in binary input data is
+  approximately 0.4%.  On average, escape sequences cause approximately 1.6%
+  overhead when only these 4 characters are escaped.
+
+  The carriage return/linefeed overhead for every line depends on the
+  developer-defined line length.  Header and trailer lines are relatively
+  small, and cause negligible impact on output size.
+
+  ## Encoding Technique
+
+  A typical encoding process might look something like this:
+
+  1. Fetch a character from the input stream.
+  2. Increment the character's ASCII value by 42, modulo 256
+  3. If the result is a critical character (as defined in the previous
+      section), write the escape character to the output stream and increment
+      character's ASCII value by 64, modulo 256.
+  4. Output the character to the output stream.
+  5. Repeat from start.
+
   """
   @moduledoc authors: ["Sơn Trần-Nguyễn"]
 
@@ -37,6 +89,12 @@ defmodule YEnc do
 
       iex> YEnc.encode(<<>>)
       ""
+
+      iex> YEnc.encode("ERLANG")
+      "o|vkxq"
+
+      iex> YEnc.encode(<<69, 82, 76, 65, 78, 71>>)
+      "o|vkxq"
   """
   @spec encode(binary()) :: binary()
   defdelegate encode(data), to: :yEnc
@@ -48,6 +106,12 @@ defmodule YEnc do
 
       iex> YEnc.decode("")
       ""
+
+      iex> YEnc.decode("o|vkxq")
+      "ERLANG"
+
+      iex> YEnc.decode(<<111, 124, 118, 107, 120, 113>>)
+      "ERLANG"
   """
   @spec decode(binary()) :: binary()
   defdelegate decode(text), to: :yEnc
