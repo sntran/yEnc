@@ -62,7 +62,7 @@ defmodule YEnc.MixProject do
 
   defp docs do
     [
-      main: "yEnc",
+      main: "YEnc",
       source_ref: "v#{@version}"
     ]
   end

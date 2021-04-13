@@ -78,7 +78,6 @@ defmodule YEnc do
       character's ASCII value by 64, modulo 256.
   4. Output the character to the output stream.
   5. Repeat from start.
-
   """
   @moduledoc authors: ["Sơn Trần-Nguyễn"]
 
@@ -131,15 +130,15 @@ defmodule YEnc do
   defdelegate post(filename, data), to: :yEnc
 
   @doc ~S"""
-  Computes and returns the crc32 (hexadecimal style) checksum for `data`.
+  Computes and returns the hexadecimal crc32 checksum for `data`.
 
   ## Examples
 
-    iex> YEnc.crc32("")
-    "00000000"
+      iex> YEnc.crc32("")
+      "00000000"
 
-    iex> YEnc.crc32("ERLANG")
-    "8a5c101d"
+      iex> YEnc.crc32("ERLANG")
+      "8a5c101d"
   """
   @spec crc32(binary) :: binary()
   defdelegate crc32(data), to: :yEnc

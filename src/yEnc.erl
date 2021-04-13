@@ -120,6 +120,7 @@ post(Filename, Data) ->
 %%
 %% @end
 %%-------------------------------------------------------------------
+-spec crc32(binary()) -> binary().
 crc32(<<>>) -> <<"00000000">>;
 crc32(Data) ->
   string:lowercase(
