@@ -25,6 +25,9 @@ defmodule YEnc do
       iex> YEnc.post("0b.bin", <<>>)
       "=ybegin line=128 size=0 name=0b.bin\r\n\r\n=yend size=0 crc32=00000000"
 
+      iex> YEnc.post("Erlang.txt", <<"ERLANG">>)
+      "=ybegin line=128 size=6 name=Erlang.txt\r\no|vkxq\r\n=yend size=6 crc32=8a5c101d"
+
   ## Encoding Principle
 
   The encoding process represents each octet of input data with a single

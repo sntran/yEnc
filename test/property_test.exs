@@ -52,4 +52,20 @@ defmodule YEnc.PropertyTest do
     end
   end
 
+  property "encode post" do
+    check all filename <- string(:alphanumeric),
+              binary <- binary()
+    do
+      size = byte_size(binary)
+      crc32 = crc32(binary)
+      encoded = post(filename, binary)
+
+      assert encoded === Enum.join([
+        "=ybegin line=128 size=#{size} name=#{filename}\r\n",
+        encode(binary),
+        "\r\n=yend size=#{size} crc32=#{crc32}"
+      ])
+    end
+  end
+
 end
