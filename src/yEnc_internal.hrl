@@ -9,3 +9,4 @@
 % The generic formulas.
 -define(ENCODE(X), (X + 42) rem 256).
 -define(DECODE(X), X - 42 + 256).
+-define(ESCAPE(X), (X + 64) rem 256).

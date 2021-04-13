@@ -54,6 +54,12 @@
 %% @end
 %%-------------------------------------------------------------------
 -spec encode(binary()) -> binary().
+% Leading TAB (9) or SPACE (32).
+% (223 + 42) % 256 = 9.
+% (246 + 42) % 256 = 32.
+encode(<<Byte, Rest/binary>>) when ?ENCODE(Byte) =:= $\t; ?ENCODE(Byte) =:= $\s ->
+  Encoded = ?ESCAPE(?ENCODE(Byte)),
+  encode(Rest, <<$=, Encoded>>);
 encode(Data) -> encode(Data, <<>>).
 
 % @TODO: use compile time function clauses instead of calculation.
@@ -61,7 +67,7 @@ encode(<<>>, Acc) -> Acc;
 % When a character, when encoded, becomes critical character, we adds
 % 64 to it, modulo 256, and prefix it with the escape character.
 encode(<<Byte/integer, Rest/binary>>, Acc) when ?critical(Byte) ->
-  Encoded = (?ENCODE(Byte) + 64) rem 256,
+  Encoded = ?ESCAPE(?ENCODE(Byte)),
   encode(Rest, <<Acc/binary, $=, Encoded>>);
 % For other characters, we adds 42, modulo 256.
 encode(<<Byte/integer, Rest/binary>>, Acc) ->

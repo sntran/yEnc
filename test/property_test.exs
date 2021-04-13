@@ -4,6 +4,7 @@ defmodule YEnc.PropertyTest do
 
   import :binary, only: [
     bin_to_list: 1,
+    match: 2,
   ]
 
   import YEnc
@@ -15,9 +16,11 @@ defmodule YEnc.PropertyTest do
     256 - 42 + ?\r, # = 227
     ?= - 42, # = 19
   ]
+  @tab (256 - 42 + ?\t)
+  @space (256 - 42 + ?\s)
 
   property "encode byte to 8-bit ascii" do
-    check all byte <- filter(byte(), &(&1 not in @criticals))  do
+    check all byte <- filter(byte(), &(&1 not in [@tab, @space | @criticals]))  do
       <<encoded>> = encode(<<byte::integer>>)
       assert encoded === rem(byte + 42, 256)
     end
@@ -34,15 +37,46 @@ defmodule YEnc.PropertyTest do
     end
   end
 
-  property "encode binary to 8-bit ascii" do
-    check all binary <- binary() do
+  property "escape single TAB (09h) and SPACE (20h)" do
+    check all char <- member_of([@tab, @space]) do
+      assert <<61, encoded::integer>> = encode(<<char::integer>>)
+      critical = rem(char + 42, 256)
+      assert encoded === rem(critical + 64, 256)
+    end
+  end
+
+  property "encode binary with leading TAB (09h) and SPACE (20h)" do
+    check all char <- member_of([@tab, @space]),
+              binary <- filter(binary(), &(match(&1, [<<@tab>>, <<@space>>]) === :nomatch))
+    do
+      binary = <<char::integer, binary::binary>>
       bytes = bin_to_list(binary)
       encoded = encode(binary)
 
       assert encoded === Enum.reduce(bytes, <<>>, fn(byte, acc) ->
+        # Encoding TAB or SPACE when it's the leading character is
+        # the same as encoding it individually.
         encoded_byte = encode(<<byte::integer>>)
         <<acc::binary, encoded_byte::binary>>
       end)
+    end
+  end
+
+  property "encode binary with TAB (09h) or SPACE (20h) inside" do
+    check all char <- member_of([@tab, @space]),
+              # First part does not have TAB or SPACE and not empty.
+              bin1 <- filter(binary(), &(&1 !== "" and match(&1, [<<@tab>>, <<@space>>]) === :nomatch)),
+              # Second part can have any characters.
+              bin2 <- binary()
+    do
+      binary = <<bin1::binary, char::integer, bin2::binary>>
+      encoded = encode(binary)
+
+      # The result should not have the special char escaped.
+      assert(
+        match(encoded, [encode(<<char::integer>>)]) === :nomatch,
+        "The result should not have the special character escaped"
+      )
     end
   end
 
