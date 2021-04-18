@@ -2,12 +2,6 @@ defmodule YEnc.PropertyTest do
   use YEnc.TestCase, async: true
   use ExUnitProperties
 
-  import :binary, only: [
-    bin_to_list: 1,
-    match: 2,
-    replace: 4,
-  ]
-
   import YEnc
 
   # These characters will be encoded to critical characters.
@@ -49,10 +43,11 @@ defmodule YEnc.PropertyTest do
   property "encode binary with leading TAB (09h) and SPACE (20h)" do
     check all char <- member_of([@tab, @space]),
               # All binary, but with TAB and SPACE removed.
-              binary <- binary_without([<<@tab>>, <<@space>>])
+              # Set max_length to avoid line breaks.
+              binary <- binary_without([<<@tab>>, <<@space>>], [max_length: 100])
     do
       binary = <<char::integer, binary::binary>>
-      bytes = bin_to_list(binary)
+      bytes = :binary.bin_to_list(binary)
       encoded = encode(binary)
 
       assert encoded === Enum.reduce(bytes, <<>>, fn(byte, acc) ->
@@ -67,18 +62,71 @@ defmodule YEnc.PropertyTest do
   property "encode binary with TAB (09h) or SPACE (20h) inside" do
     check all char <- member_of([@tab, @space]),
               # First part does not have TAB or SPACE and not empty.
-              bin1 <- filter(binary_without([<<@tab>>, <<@space>>]), &(&1 !== "")),
+              # Set max_length to avoid line breaks.
+              bin1 <- filter(binary_without([<<@tab>>, <<@space>>], max_length: 100), &(&1 !== "")),
               # Second part can have any characters.
-              bin2 <- binary()
+              # Set max_length to avoid line breaks.
+              bin2 <- binary(max_length: 100)
     do
       binary = <<bin1::binary, char::integer, bin2::binary>>
       encoded = encode(binary)
 
       # The result should not have the special char escaped.
       assert(
-        match(encoded, [encode(<<char::integer>>)]) === :nomatch,
+        :binary.match(encoded, [encode(<<char::integer>>)]) === :nomatch,
         "The result should not have the special character escaped"
       )
+    end
+  end
+
+  property "line breaks after default 128 characters" do
+    check all binary <- binary(length: 129) do
+      encoded = encode(binary)
+      assert(
+        :binary.match(encoded, "\r\n") !== :nomatch,
+        "#{byte_size(encoded)}-byte encoded binary should have CRLF pairs"
+      )
+    end
+
+    check all binary <- binary() do
+      encoded = encode(binary)
+      lines = :binary.split(encoded, "\r\n", [:global])
+      # Here we calculate the size of the encoded binary without CRLF pair.
+      single_line_encoded = Enum.join(lines, "")
+      size = byte_size(single_line_encoded)
+
+
+      case size do
+        0 ->
+          assert length(lines) === 1
+        _ ->
+          assert(
+            length(lines) === ceil(size / 128),
+            """
+            assert length(lines) === ceil(size / 128)
+            size: #{size}
+            left: #{length(lines)}
+            right: #{ceil(size / 128)}
+            """
+          )
+      end
+    end
+  end
+
+  property "nth escaped sequence is kept at the same line" do
+    criticals = Enum.map([@tab, @space | @criticals], &(<<&1>>))
+
+    # Our test binary has the first 127 bytes safe, i.e., no critical
+    # characters, nor leading TAB or spaces. This ensures the encoded
+    # yEnc for that first 127 bytes also has length of 127 bytes.
+    check all bin1 <- binary_without(criticals, length: 127),
+              char <- member_of(@criticals),
+              bin2 <- binary(min_length: 1)
+    do
+      binary = <<bin1::binary, char::integer, bin2::binary>>
+      encoded = encode(binary)
+
+      assert <<_::binary-size(127), ?=, _, ?\r, ?\n, _::binary>> = encoded
     end
   end
 
@@ -105,8 +153,12 @@ defmodule YEnc.PropertyTest do
   end
 
   # Binary generator without characters matching pattern.
-  defp binary_without(patterns) do
-    map(binary(), &(replace(&1, patterns, <<"">>, [:global])))
+  defp binary_without(patterns, options) do
+    map(
+      binary(options),
+      # Replaces characters in patterns with an empty space.
+      &(:binary.replace(&1, patterns, <<" ">>, [:global]))
+    )
   end
 
 end

@@ -13,6 +13,7 @@
 
 ]).
 
+-include_lib("kernel/include/logger.hrl").
 -include("yEnc.hrl").
 -include("yEnc_internal.hrl").
 
@@ -53,16 +54,18 @@
 %%
 %% @end
 %%-------------------------------------------------------------------
--spec encode(binary()) -> binary().
+-spec encode(binary()) -> yEnc().
 % Leading TAB (9) or SPACE (32).
 % (223 + 42) % 256 = 9.
 % (246 + 42) % 256 = 32.
 encode(<<Byte, Rest/binary>>) when ?ENCODE(Byte) =:= $\t; ?ENCODE(Byte) =:= $\s ->
   Encoded = ?ESCAPE(?ENCODE(Byte)),
-  encode(Rest, <<$=, Encoded>>);
-encode(Data) -> encode(Data, <<>>).
+  wrap(encode(Rest, <<$=, Encoded>>), ?LINE_SIZE);
+encode(Data) ->
+  wrap(encode(Data, <<>>), ?LINE_SIZE).
 
 % @TODO: use compile time function clauses instead of calculation.
+-spec encode(binary(), Acc) -> Acc when Acc :: yEnc().
 encode(<<>>, Acc) -> Acc;
 % When a character, when encoded, becomes critical character, we adds
 % 64 to it, modulo 256, and prefix it with the escape character.
@@ -73,6 +76,45 @@ encode(<<Byte/integer, Rest/binary>>, Acc) when ?critical(Byte) ->
 encode(<<Byte/integer, Rest/binary>>, Acc) ->
   Encoded = ?ENCODE(Byte),
   encode(Rest, <<Acc/binary, Encoded>>).
+
+% Appends a carriage return/linefeed pairs after every N characters.
+% If a critical character appears in the nth position of a line, both
+% the escape character and the encoded critical character must be
+% written to the same line, before the carriage return/linefeed.  In
+% this event, the actual number of  characters in the line is equal
+% to n+1.  Effectively, this means that a line cannot end with an
+% escape character, and that a line with n+1 characters must end with
+% an encoded critical character.
+-spec wrap(yEnc(), pos_integer()) -> yEnc().
+wrap(Data, N) -> wrap(Data, N, <<>>).
+
+-spec wrap(yEnc(), pos_integer(), Acc) -> Acc when Acc :: yEnc().
+wrap(<<>>, _, Acc) -> Acc;
+% Short binary.
+wrap(Data, N, <<>>) when size(Data) < N ->
+  Data;
+% Short line.
+wrap(Data, N, Acc) when size(Data) < N ->
+  <<Acc/binary, $\r, $\n, Data/binary>>;
+% First line in binary with more than 1 line.
+wrap(Data, N, <<>>) ->
+  case Data of
+    % Critical character at the nth position of the line.
+    <<Line:(N-1)/binary, $=, Escaped, Rest/binary>> ->
+      % Both the escape character and the encoded critical character
+      % must be written to the same line, before the CRLF pair.
+      wrap(Rest, N, <<Line/binary, $=, Escaped>>);
+    <<Line:N/binary, Rest/binary>> ->
+      wrap(Rest, N, Line)
+  end;
+% Next line in binary with more than 1 line.
+wrap(Data, N, Acc) ->
+  case Data of
+    <<Line:(N-1)/binary, $=, Escaped, Rest/binary>> ->
+      wrap(Rest, N, <<Acc/binary, $\r, $\n, Line/binary, $=, Escaped>>);
+    <<Line:N/binary, Rest/binary>> ->
+      wrap(Rest, N, <<Acc/binary, $\r, $\n, Line/binary>>)
+  end.
 
 %%-------------------------------------------------------------------
 %% @doc Performs raw yEnc decoding on data returning the result.
@@ -90,10 +132,14 @@ encode(<<Byte/integer, Rest/binary>>, Acc) ->
 %%
 %% @end
 %%-------------------------------------------------------------------
--spec decode(binary()) -> binary().
+-spec decode(yEnc()) -> binary().
 decode(Data) -> decode(Data, <<>>).
 
+-spec decode(yEnc(), Acc) -> Acc when Acc :: binary().
 decode(<<>>, Acc) -> Acc;
+% Line breaks are removed.
+decode(<<$\r, $\n, Rest/binary>>, Acc) ->
+  decode(Rest, Acc);
 % Special case when the escaped character is the escape character.
 % 125 - 64 = 61 = $=.
 decode(<<$=, 125, Rest/binary>>, Acc) ->
@@ -112,7 +158,7 @@ decode(<<Byte/integer, Rest/binary>>, Acc) ->
 %%
 %% @end
 %%-------------------------------------------------------------------
--spec post(file:name(), binary()) -> binary().
+-spec post(file:name(), binary()) -> yEnc().
 post(Filename, Data) ->
   Size = integer_to_binary(byte_size(Data)),
   Header = <<"=ybegin line=128 size=", Size/binary, " name=", Filename/binary, "\r\n">>,
