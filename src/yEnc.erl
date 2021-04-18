@@ -53,6 +53,21 @@
 %%  4. Output the character to the output stream.
 %%  5. Repeat from start.
 %%
+%% To facilitate transmission via existing standard protocols (most
+%% notably NNTP), carriage return/linefeed pairs should be written to
+%% the output stream after every n characters, where n is the desired
+%% line length.
+%%
+%% The default value for n is 128.
+%%
+%% If a critical character appears in the nth position of a line, both
+%% the escape character and the encoded critical character must be
+%% written to the same line, before the carriage return/linefeed. In
+%% this event, the actual number of  characters in the line is equal to
+%% n+1. Effectively, this means that a line cannot end with an escape
+%% character, and that a line with n+1 characters must end with an
+%% encoded critical character.
+%%
 %% @end
 %%-------------------------------------------------------------------
 -spec encode(binary()) -> yEnc().

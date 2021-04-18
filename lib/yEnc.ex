@@ -22,6 +22,12 @@ defmodule YEnc do
       iex> YEnc.decode("o|vkxq")
       "ERLANG"
 
+      iex> YEnc.encode(<<0, 0, 0, 224, 0, 0, 0, 224, 0>>, line_size: 4)
+      "***=J\r\n***=J\r\n*"
+
+      iex> YEnc.decode("***=J\r\n***=J\r\n*")
+      <<0, 0, 0, 224, 0, 0, 0, 224, 0>>
+
       iex> YEnc.post("0b.bin", <<>>)
       "=ybegin line=128 size=0 name=0b.bin\r\n\r\n=yend size=0 crc32=00000000"
 
@@ -84,6 +90,26 @@ defmodule YEnc do
   @doc ~S"""
   Performs raw yEnc encoding on data returning the result.
 
+  To facilitate transmission via existing standard protocols (most
+  notably NNTP), carriage return/linefeed pairs should be written to
+  the output stream after every n characters, where n is the desired
+  line length.
+
+  The default value for n is 128. This can be changed in options.
+
+  If a critical character appears in the nth position of a line, both
+  the escape character and the encoded critical character must be
+  written to the same line, before the carriage return/linefeed. In
+  this event, the actual number of  characters in the line is equal to
+  n+1. Effectively, this means that a line cannot end with an escape
+  character, and that a line with n+1 characters must end with an
+  encoded critical character.
+
+  ## Options
+
+  * `:line_size` - (non-negative integer) sets the length of the line
+    before inserting CRLF pair.
+
   ## Examples
 
       iex> YEnc.encode("")
@@ -97,14 +123,17 @@ defmodule YEnc do
 
       iex> YEnc.encode(<<69, 82, 76, 65, 78, 71>>)
       "o|vkxq"
+
+      iex> YEnc.encode(<<0, 0, 0, 224, 0, 0, 0, 224, 0>>, line_size: 4)
+      "***=J\r\n***=J\r\n*"
   """
-  @spec encode(binary()) :: binary()
-  defdelegate encode(data), to: :yEnc
-  @spec encode(binary(), list()) :: binary()
-  defdelegate encode(data, options), to: :yEnc
+  @spec encode(binary(), keyword()) :: binary()
+  defdelegate encode(data, options \\ []), to: :yEnc
 
   @doc ~S"""
   Performs raw yEnc decoding on data returning the result.
+
+  All CRLF pairs are also removed.
 
   ## Examples
 
@@ -116,6 +145,9 @@ defmodule YEnc do
 
       iex> YEnc.decode(<<111, 124, 118, 107, 120, 113>>)
       "ERLANG"
+
+      iex> YEnc.decode("***=J\r\n***=J\r\n*")
+      <<0, 0, 0, 224, 0, 0, 0, 224, 0>>
   """
   @spec decode(binary()) :: binary()
   defdelegate decode(text), to: :yEnc
