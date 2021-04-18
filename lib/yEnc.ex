@@ -84,18 +84,13 @@ defmodule YEnc do
       character's ASCII value by 64, modulo 256.
   4. Output the character to the output stream.
   5. Repeat from start.
-  """
-  @moduledoc authors: ["Sơn Trần-Nguyễn"]
-
-  @doc ~S"""
-  Performs raw yEnc encoding on data returning the result.
 
   To facilitate transmission via existing standard protocols (most
   notably NNTP), carriage return/linefeed pairs should be written to
   the output stream after every n characters, where n is the desired
   line length.
 
-  The default value for n is 128. This can be changed in options.
+  The default value for n is 128.
 
   If a critical character appears in the nth position of a line, both
   the escape character and the encoded critical character must be
@@ -104,6 +99,11 @@ defmodule YEnc do
   n+1. Effectively, this means that a line cannot end with an escape
   character, and that a line with n+1 characters must end with an
   encoded critical character.
+  """
+  @moduledoc authors: ["Sơn Trần-Nguyễn"]
+
+  @doc ~S"""
+  Performs raw yEnc encoding on data returning the result.
 
   ## Options
 
