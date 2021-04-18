@@ -4,6 +4,7 @@
 %% API
 -export([
   encode/1,
+  encode/2,
   decode/1,
   post/2,
   crc32/1
@@ -55,18 +56,23 @@
 %% @end
 %%-------------------------------------------------------------------
 -spec encode(binary()) -> yEnc().
+encode(Data) -> encode(Data, []).
+
+-spec encode(binary(), [proplists:property()]) -> yEnc();
+            % Tail-recursive raw encoder.
+            (binary(), Acc) -> Acc when Acc :: yEnc().
+encode(Data, Opts) when is_list(Opts) ->
+  LineSize = proplists:get_value(line_size, Opts, ?LINE_SIZE),
+  wrap(encode(Data, <<>>), LineSize);
+
+% @TODO: use compile time function clauses instead of calculation.
+encode(<<>>, Acc) -> Acc;
 % Leading TAB (9) or SPACE (32).
 % (223 + 42) % 256 = 9.
 % (246 + 42) % 256 = 32.
-encode(<<Byte, Rest/binary>>) when ?ENCODE(Byte) =:= $\t; ?ENCODE(Byte) =:= $\s ->
+encode(<<Byte, Rest/binary>>, <<>>) when ?ENCODE(Byte) =:= $\t; ?ENCODE(Byte) =:= $\s ->
   Encoded = ?ESCAPE(?ENCODE(Byte)),
-  wrap(encode(Rest, <<$=, Encoded>>), ?LINE_SIZE);
-encode(Data) ->
-  wrap(encode(Data, <<>>), ?LINE_SIZE).
-
-% @TODO: use compile time function clauses instead of calculation.
--spec encode(binary(), Acc) -> Acc when Acc :: yEnc().
-encode(<<>>, Acc) -> Acc;
+  encode(Rest, <<$=, Encoded>>);
 % When a character, when encoded, becomes critical character, we adds
 % 64 to it, modulo 256, and prefix it with the escape character.
 encode(<<Byte/integer, Rest/binary>>, Acc) when ?critical(Byte) ->

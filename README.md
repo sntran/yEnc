@@ -13,7 +13,7 @@ The package can be installed by adding `yEnc` to your list of dependencies in `m
 ```elixir
 def deps do
   [
-    {:yEnc, "~> 0.4.0"}
+    {:yEnc, "~> 0.5.0"}
   ]
 end
 ```

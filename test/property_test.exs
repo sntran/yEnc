@@ -95,7 +95,6 @@ defmodule YEnc.PropertyTest do
       single_line_encoded = Enum.join(lines, "")
       size = byte_size(single_line_encoded)
 
-
       case size do
         0 ->
           assert length(lines) === 1
@@ -104,9 +103,10 @@ defmodule YEnc.PropertyTest do
             length(lines) === ceil(size / 128),
             """
             assert length(lines) === ceil(size / 128)
-            size: #{size}
             left: #{length(lines)}
             right: #{ceil(size / 128)}
+            yEnc: #{inspect(encoded, limit: :infinity)}
+            size: #{size}
             """
           )
       end
@@ -127,6 +127,29 @@ defmodule YEnc.PropertyTest do
       encoded = encode(binary)
 
       assert <<_::binary-size(127), ?=, _, ?\r, ?\n, _::binary>> = encoded
+    end
+  end
+
+  property "custom nth option to break lines" do
+    criticals = Enum.map([@tab, @space | @criticals], &(<<&1>>))
+
+    check all line_size <- integer(2..256),
+              pre_break = line_size - 1,
+              bin1 <- binary_without(criticals, length: pre_break),
+              char <- member_of(@criticals),
+              bin2 <- binary(min_length: 1)
+    do
+      binary = <<bin1::binary, char::integer, bin2::binary>>
+      encoded = encode(binary, line_size: line_size)
+
+      assert(
+        Kernel.match?(<<_::binary-size(pre_break), ?=, _, ?\r, ?\n, _::binary>>, encoded),
+        """
+        code: <<_::binary-size(#{pre_break}), ?=, _, ?\\r, ?\\n, _::binary>> = encoded
+        left: <<_::binary-size(#{pre_break}), ?=, _, ?\\r, ?\\n, _::binary>>
+        right: #{inspect(encoded, limit: :infinity)},
+        """
+      )
     end
   end
 

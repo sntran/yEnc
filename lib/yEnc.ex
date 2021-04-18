@@ -100,6 +100,8 @@ defmodule YEnc do
   """
   @spec encode(binary()) :: binary()
   defdelegate encode(data), to: :yEnc
+  @spec encode(binary(), list()) :: binary()
+  defdelegate encode(data, options), to: :yEnc
 
   @doc ~S"""
   Performs raw yEnc decoding on data returning the result.
